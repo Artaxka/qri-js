@@ -4,10 +4,11 @@ module.exports = (grunt) ->
         pkg: grunt.file.readJSON 'package.json'
         uglify:
             options:
+                enclose: true
                 banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n'
 
             build:
-                src: 'src/<%= pkg.name %>.js'
+                src: 'src/*.coffee'
                 dest: 'build/<%= pkg.name %>.min.js'
 
         coffee:
