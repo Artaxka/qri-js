@@ -13,5 +13,5 @@ compile:
 ifneq ($(NODES_EXISTS), 1)
 	npm install
 endif
-	grunt concat
 	grunt coffee uglify
+	grunt concat
