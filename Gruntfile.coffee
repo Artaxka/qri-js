@@ -1,23 +1,35 @@
+BANNER = '/*! qrijs <%= grunt.template.today("yyyy-mm-dd") %> */\n'
+
+
 module.exports = (grunt) ->
 
     grunt.initConfig
         pkg: grunt.file.readJSON 'package.json'
+
+        concat:
+            options:
+                banner: BANNER
+
+            dist:
+                src: ['contrib/*.js', 'dist/qri.js']
+                dest: 'dist/qri.js'
+
         uglify:
             options:
                 enclose: true
-                banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n'
+                banner: BANNER
 
             build:
-                src: 'src/*.coffee'
-                dest: 'build/<%= pkg.name %>.min.js'
+                src: ['contrib/*.js', 'src/*.coffee']
+                dest: 'dist/qri.min.js'
 
         coffee:
             compile:
                 files:
-                    'build/qri.js': ['src/*.coffee']
+                    'dist/qri.js': ['src/*.coffee']
 
     grunt.loadNpmTasks('grunt-contrib-uglify')
-
     grunt.loadNpmTasks('grunt-contrib-coffee')
+    grunt.loadNpmTasks('grunt-contrib-concat')
 
-    grunt.registerTask('default', ['uglify'])
+    grunt.registerTask('default', ['uglify', 'concat'])
