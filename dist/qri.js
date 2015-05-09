@@ -1,4 +1,4 @@
-/*! qrijs 2015-05-09 */
+/*! qrijs 2015-05-10 */
 /*
    * EventSource polyfill version 0.9.6
    * Supported by sc AmvTek srl
@@ -622,6 +622,74 @@
 })(this);
 
 (function() {
-  module.exports = {};
+
+
+}).call(this);
+
+(function() {
+  var DEFAULT;
+
+  DEFAULT = {
+    address: "http://example.com:8000/stream?key=123",
+    onError: function(ev) {
+      return ev.srcElement.close();
+    }
+  };
+
+  window.Qri = (function() {
+    function Qri(handler, opts) {
+      var address, lib, onError;
+      lib = new QriLib();
+      opts = lib.merge(DEFAULT, opts || {});
+      address = opts.address, onError = opts.onError;
+      this.listen(address, handler, onError);
+    }
+
+    Qri.prototype.listen = function(address, sccb, ercb) {
+      var evtSource;
+      evtSource = new EventSource(address);
+      evtSource.onerror = ercb;
+      return evtSource.onmessage = sccb;
+    };
+
+    return Qri;
+
+  })();
+
+}).call(this);
+
+(function() {
+  var hasProp = {}.hasOwnProperty;
+
+  window.QriLib = (function() {
+    function QriLib() {}
+
+    QriLib.prototype.copy = function(obj) {
+      var k, o, v;
+      o = new Object();
+      for (k in obj) {
+        if (!hasProp.call(obj, k)) continue;
+        v = obj[k];
+        o[k] = v;
+      }
+      return o;
+    };
+
+    QriLib.prototype.merge = function(x, y) {
+      var k, o, v;
+      o = this.copy(x);
+      for (k in y) {
+        if (!hasProp.call(y, k)) continue;
+        v = y[k];
+        if (!(k in x)) {
+          o[k] = v;
+        }
+      }
+      return o;
+    };
+
+    return QriLib;
+
+  })();
 
 }).call(this);

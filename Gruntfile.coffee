@@ -20,7 +20,7 @@ module.exports = (grunt) ->
                 banner: BANNER
 
             build:
-                src: ['contrib/*.js', 'src/*.coffee']
+                src: ['dist/qri.js']
                 dest: 'dist/qri.min.js'
 
         coffee:
@@ -31,5 +31,3 @@ module.exports = (grunt) ->
     grunt.loadNpmTasks('grunt-contrib-uglify')
     grunt.loadNpmTasks('grunt-contrib-coffee')
     grunt.loadNpmTasks('grunt-contrib-concat')
-
-    grunt.registerTask('default', ['uglify', 'concat'])
