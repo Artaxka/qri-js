@@ -1,4 +1,4 @@
-/*! qrijs 2015-05-10 */
+/*! qrijs 2015-05-11 */
 /*
    * EventSource polyfill version 0.9.6
    * Supported by sc AmvTek srl
@@ -622,41 +622,84 @@
 })(this);
 
 (function() {
+  var CODE_LENGTH, DEFAULT, listen, process, warn,
+    slice = [].slice;
 
-
-}).call(this);
-
-(function() {
-  var DEFAULT;
+  CODE_LENGTH = 3;
 
   DEFAULT = {
-    address: "http://example.com:8000/stream?key=123",
+    address: "",
     onError: function(ev) {
       return ev.srcElement.close();
     }
   };
 
+  warn = function() {
+    var msg;
+    msg = 1 <= arguments.length ? slice.call(arguments, 0) : [];
+    return typeof console !== "undefined" && console !== null ? console.warn.apply(console, ["[WARN]:"].concat(slice.call(msg))) : void 0;
+  };
+
+  listen = function(address, sccb, ercb) {
+    var evtSource;
+    evtSource = new EventSource(address);
+    evtSource.onerror = ercb;
+    return evtSource.onmessage = sccb;
+  };
+
+
+  /*
+      Take message from the server and code of message type.
+  
+      Example:
+          => process({data: "Ping"})
+          {'msg': "Ping"}
+  
+          => pricess({data: "102Ping"})
+          {'msg': "Ping", 'code': 123}
+   */
+
+  process = function(response) {
+    var code, data, result;
+    result = {};
+    data = response.data;
+    code = parseInt(data.slice(0, CODE_LENGTH), 10);
+    if (code >= 0) {
+      result['msg'] = data.slice(CODE_LENGTH);
+      result['code'] = code;
+    } else {
+      result['msg'] = data;
+    }
+    return result;
+  };
+
   window.Qri = (function() {
     function Qri(handler, opts) {
-      var address, lib, onError;
+      var address, lib, onError, wrapper;
       lib = new QriLib();
       opts = lib.merge(DEFAULT, opts || {});
       address = opts.address, onError = opts.onError;
-      this.listen(address, handler, onError);
+      if (!address) {
+        return warn("address isnt specified. SSE is down.");
+      }
+      wrapper = function() {
+        var args;
+        args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
+        return handler(process.apply(null, args));
+      };
+      listen(address, wrapper, onError);
     }
-
-    Qri.prototype.listen = function(address, sccb, ercb) {
-      var evtSource;
-      evtSource = new EventSource(address);
-      evtSource.onerror = ercb;
-      return evtSource.onmessage = sccb;
-    };
 
     return Qri;
 
   })();
 
 }).call(this);
+
+
+/*
+    Qri helpers lib.
+ */
 
 (function() {
   var hasProp = {}.hasOwnProperty;
