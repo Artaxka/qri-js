@@ -1,8 +1,10 @@
-# You can send your own code of the message type to group messages on their type.
+# You can send your own code to group messages by their code type.
 CODE_LENGTH = 3
 
 DEFAULT =
-    address: "" # http://example.com:8000/stream
+    peer: null # p=<peer_key>
+    checksum: null # s=<unique>
+    address: null # http://example.com:8000/stream
     onError: (ev) -> ev.srcElement.close()
 
 
@@ -43,9 +45,20 @@ class window.Qri
         lib = new QriLib()
         opts = lib.merge DEFAULT, opts or {}
 
-        {address, onError} = opts
+        {peer, checksum, address, onError} = opts
         unless address
             return warn "address isnt specified. SSE is down."
 
+        unless peer
+            return warn "peer isnt specified. SSE is down."
+
+        unless checksum
+            return warn "checksum isnt specified. SSE is down."
+
+        url = lib.makeUrl address, {p: peer, s: checksum}
+
         wrapper = (args...) -> handler process args...
-        listen address, wrapper, onError
+        listen url, wrapper, onError
+
+
+

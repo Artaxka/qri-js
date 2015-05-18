@@ -1,4 +1,4 @@
-/*! qrijs 2015-05-11 */
+/*! qrijs 2015-05-18 */
 /*
    * EventSource polyfill version 0.9.6
    * Supported by sc AmvTek srl
@@ -628,7 +628,9 @@
   CODE_LENGTH = 3;
 
   DEFAULT = {
-    address: "",
+    peer: null,
+    checksum: null,
+    address: null,
     onError: function(ev) {
       return ev.srcElement.close();
     }
@@ -675,19 +677,29 @@
 
   window.Qri = (function() {
     function Qri(handler, opts) {
-      var address, lib, onError, wrapper;
+      var address, checksum, lib, onError, peer, url, wrapper;
       lib = new QriLib();
       opts = lib.merge(DEFAULT, opts || {});
-      address = opts.address, onError = opts.onError;
+      peer = opts.peer, checksum = opts.checksum, address = opts.address, onError = opts.onError;
       if (!address) {
         return warn("address isnt specified. SSE is down.");
       }
+      if (!peer) {
+        return warn("peer isnt specified. SSE is down.");
+      }
+      if (!checksum) {
+        return warn("checksum isnt specified. SSE is down.");
+      }
+      url = lib.makeUrl(address, {
+        p: peer,
+        s: checksum
+      });
       wrapper = function() {
         var args;
         args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
         return handler(process.apply(null, args));
       };
-      listen(address, wrapper, onError);
+      listen(url, wrapper, onError);
     }
 
     return Qri;
@@ -724,11 +736,26 @@
       for (k in y) {
         if (!hasProp.call(y, k)) continue;
         v = y[k];
-        if (!(k in x)) {
+        if (!x[k]) {
           o[k] = v;
         }
       }
       return o;
+    };
+
+    QriLib.prototype.makeUrl = function(address, params) {
+      var k, kwargs, v;
+      kwargs = (function() {
+        var results;
+        results = [];
+        for (k in params) {
+          if (!hasProp.call(params, k)) continue;
+          v = params[k];
+          results.push([k + "=" + v]);
+        }
+        return results;
+      })();
+      return address + "?" + kwargs.join("&");
     };
 
     return QriLib;

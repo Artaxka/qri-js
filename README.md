@@ -36,3 +36,22 @@ Include in your html documents one of the following javascript file:
 
 > -    dist/qri.js
 > -    dist/qri.min.js (minified version)
+
+Example
+=======
+
+```javascript
+var handler = function(data) { console.log(data); };
+var opts = {
+    peer: "123",
+    checksum: "2008521774",
+    address: "http://example.com:8000/stream"
+};
+
+var qri = new Qri(handler, opts);
+```
+
+It will build the following address and will listen it:
+```
+http://example.com:8000/stream?p=123&s=2008521774
+```

@@ -15,7 +15,11 @@ class window.QriLib
     merge: (x, y) ->
         o = @.copy x
 
-        for own k, v of y when k not of x
+        for own k, v of y when not x[k]
             o[k] = v
 
         o
+
+    makeUrl: (address, params) ->
+        kwargs = (["#{k}=#{v}"] for own k, v of params)
+        address + "?" + kwargs.join "&"
