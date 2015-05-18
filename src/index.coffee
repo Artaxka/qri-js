@@ -55,7 +55,7 @@ class window.Qri
         unless checksum
             return warn "checksum isnt specified. SSE is down."
 
-        url = lib.makeUrl address, {p: peer, s: checksum}
+        url = lib.makeUrl address, {p: peer.toString(), s: checksum.toString()}
 
         wrapper = (args...) -> handler process args...
         listen url, wrapper, onError
