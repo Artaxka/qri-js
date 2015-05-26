@@ -15,7 +15,7 @@ class window.QriLib
     merge: (x, y) ->
         o = @.copy x
 
-        for own k, v of y when not x[k]
+        for own k, v of y
             o[k] = v
 
         o

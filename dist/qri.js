@@ -1,4 +1,4 @@
-/*! qrijs 2015-05-18 */
+/*! qrijs 2015-05-26 */
 /** @license
  * eventsource.js
  * Available under MIT License (MIT)
@@ -632,9 +632,7 @@
       for (k in y) {
         if (!hasProp.call(y, k)) continue;
         v = y[k];
-        if (!x[k]) {
-          o[k] = v;
-        }
+        o[k] = v;
       }
       return o;
     };
