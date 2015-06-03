@@ -5,6 +5,7 @@ This is only a part of our infrastructure for easy integration of push notificat
 Read more about other Qri components:
 
 1. [SSE server](https://github.com/Orderry/orderry-qri);
+2. [Python lib](https://github.com/Orderry/qri-py);
 
 Infrastructure
 ==============
