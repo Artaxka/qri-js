@@ -1,4 +1,4 @@
-/*! qrijs 2015-05-26 */
+/*! qrijs 2015-10-12 */
 /** @license
  * eventsource.js
  * Available under MIT License (MIT)
@@ -10,6 +10,9 @@
 
 (function (global) {
   "use strict";
+
+  var setTimeout = global.setTimeout;
+  var clearTimeout = global.clearTimeout;
 
   function Map() {
     this.data = {};
@@ -109,8 +112,8 @@
   var XHR = global.XMLHttpRequest;
   var XDR = global.XDomainRequest;
   var isCORSSupported = XHR != undefined && (new XHR()).withCredentials != undefined;
-  var isXHR = isCORSSupported;
-  var Transport = isCORSSupported ? XHR : (XDR != undefined ? XDR : undefined);
+  var Transport = isCORSSupported || (XHR != undefined && XDR == undefined) ? XHR : XDR;
+
   var WAITING = -1;
   var CONNECTING = 0;
   var OPEN = 1;
@@ -154,7 +157,8 @@
     var that = this;
     var retry = initialRetry;
     var wasActivity = false;
-    var xhr = options != undefined && options.Transport != undefined ? new options.Transport() : new Transport();
+    var CurrentTransport = options != undefined && options.Transport != undefined ? options.Transport : Transport;
+    var xhr = new CurrentTransport();
     var timeout = 0;
     var timeout0 = 0;
     var charOffset = 0;
@@ -186,7 +190,14 @@
     }
 
     function onEvent(type) {
-      var responseText = currentState === OPEN || currentState === CONNECTING ? xhr.responseText : "";
+      var responseText = "";
+      if (currentState === OPEN || currentState === CONNECTING) {
+        try {
+          responseText = xhr.responseText;
+        } catch (error) {
+          // IE 8 - 9 with XMLHttpRequest
+        }
+      }
       var event = undefined;
       var isWrongStatusCodeOrContentType = false;
 
@@ -194,7 +205,7 @@
         var status = 0;
         var statusText = "";
         var contentType = undefined;
-        if (isXHR) {
+        if (!("contentType" in xhr)) {
           try {
             status = xhr.status;
             statusText = xhr.statusText;
@@ -384,7 +395,19 @@
       onEvent("error");
     }
 
-    if (isXHR && global.opera != undefined) {
+    function onReadyStateChange() {
+      if (xhr.readyState === 4) {
+        if (xhr.status === 0) {
+          onEvent("error");
+        } else {
+          onEvent("load");
+        }
+      } else {
+        onEvent("progress");
+      }
+    }
+
+    if (("readyState" in xhr) && global.opera != undefined) {
       // workaround for Opera issue with "progress" events
       timeout0 = setTimeout(function f() {
         if (xhr.readyState === 3) {
@@ -402,7 +425,9 @@
       }
 
       // loading indicator in Safari, Chrome < 14
-      if (isXHR && !("onloadend" in xhr) && global.document != undefined && global.document.readyState != undefined && global.document.readyState !== "complete") {
+      // loading indicator in Firefox
+      // https://bugzilla.mozilla.org/show_bug.cgi?id=736723
+      if ((!("ontimeout" in xhr) || ("sendAsBinary" in xhr) || ("mozAnon" in xhr)) && global.document != undefined && global.document.readyState != undefined && global.document.readyState !== "complete") {
         timeout = setTimeout(onTimeout, 4);
         return;
       }
@@ -411,22 +436,22 @@
       xhr.onload = onLoad;
       xhr.onerror = onError;
 
-      if (isXHR) {
+      if ("onabort" in xhr) {
         // improper fix to match Firefox behaviour, but it is better than just ignore abort
         // see https://bugzilla.mozilla.org/show_bug.cgi?id=768596
         // https://bugzilla.mozilla.org/show_bug.cgi?id=880200
         // https://code.google.com/p/chromium/issues/detail?id=153570
         xhr.onabort = onError;
-
-        // Firefox 3.5 - 3.6 - ? < 9.0
-        // onprogress is not fired sometimes or delayed
-        xhr.onreadystatechange = onProgress;
       }
 
-      // loading indicator in Firefox
-      // https://bugzilla.mozilla.org/show_bug.cgi?id=736723
-      if (xhr.sendAsBinary == undefined) {
+      if ("onprogress" in xhr) {
         xhr.onprogress = onProgress;
+      }
+      // IE 8-9 (XMLHTTPRequest)
+      // Firefox 3.5 - 3.6 - ? < 9.0
+      // onprogress is not fired sometimes or delayed
+      if (!("onprogress" in xhr) || !("ontimeout" in xhr)) {
+        xhr.onreadystatechange = onReadyStateChange;
       }
 
       wasActivity = false;
@@ -449,12 +474,16 @@
       }
       xhr.open("GET", s, true);
 
-      if (isXHR) {
+      if ("withCredentials" in xhr) {
         // withCredentials should be set after "open" for Safari and Chrome (< 19 ?)
         xhr.withCredentials = withCredentials;
+      }
 
+      if ("responseType" in xhr) {
         xhr.responseType = "text";
+      }
 
+      if ("setRequestHeader" in xhr) {
         // Request header field Cache-Control is not allowed by Access-Control-Allow-Headers.
         // "Cache-control: no-cache" are not honored in Chrome and Firefox
         // https://bugzilla.mozilla.org/show_bug.cgi?id=428916
@@ -489,22 +518,16 @@
 
   EventSource.prototype = new F();
   F.call(EventSource);
+  if (isCORSSupported) {
+    EventSource.prototype.withCredentials = undefined;
+  }
 
   var isEventSourceSupported = function () {
-    if (global.EventSource != undefined) {
-      try {
-        var es = new global.EventSource("data:text/event-stream;charset=utf-8,");
-        es.close();
-        return es.withCredentials === false &&
-               es.url !== ""; // to filter out Opera 12 implementation
-      } catch (error) {
-        return false;
-      }
-    }
-    return false;
+    // Opera 12 fails this test, but this is fine.
+    return global.EventSource != undefined && ("withCredentials" in global.EventSource.prototype);
   };
 
-  if (Transport != undefined && !isEventSourceSupported()) {
+  if (Transport != undefined && (global.EventSource == undefined || (isCORSSupported && !isEventSourceSupported()))) {
     // Why replace a native EventSource ?
     // https://bugzilla.mozilla.org/show_bug.cgi?id=444328
     // https://bugzilla.mozilla.org/show_bug.cgi?id=831392
