@@ -1,4 +1,4 @@
-/*! qrijs 2016-09-20 */
+/*! qrijs 2017-02-01 */
 /** @license
  * eventsource.js
  * Available under MIT License (MIT)
@@ -599,7 +599,7 @@
     this.timeout = 0;
     if (this.currentState !== WAITING) {
       if (!this.wasActivity) {
-        throwError(new Error("No activity within " + this.heartbeatTimeout + " milliseconds. Reconnecting."));
+        // throwError(new Error("No activity within " + this.heartbeatTimeout + " milliseconds. Reconnecting."));
         this.transport.cancel();
       } else {
         this.wasActivity = false;
